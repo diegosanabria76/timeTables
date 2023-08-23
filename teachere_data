@@ -1,0 +1,19 @@
+# Data related to teachers and their schedules
+teachers = {
+    'Andres': {
+        'schedule': [
+            {'curso': 6, 'subjects': {"filosofia": 3, "etica": 2, "religion": 4}},
+            {'curso': 8, 'subjects': "etica", "hours": 5},
+            {'curso': 9, 'subjects': "filosofia", "hours": 5},
+            {'curso': 10, 'subjects': "religion", "hours": 8},
+        ]
+    },
+    'MarioLadino': {
+        'schedule': [
+            {'curso': 6, 'subjects': {"math": 2, "geometry": 1, "arithmetic": 5}},
+            {'curso': 1, 'subjects': "etica", "hours": 5},
+            {'curso': 3, 'subjects': "filosofia", "hours": 5},
+            {'curso': 4, 'subjects': "religion", "hours": 8},
+        ]
+    },
+}
