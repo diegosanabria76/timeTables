@@ -1,0 +1,168 @@
+import csv
+import os
+from teachers_data import teachers
+from global_schedule import global_schedule, WEEKDAYS, TIME_SLOTS
+
+def is_slot_available(day, time_slot):
+    """Check if a slot is available in the global schedule"""
+    print(f"Checking availability for {day} at {time_slot}")
+    return global_schedule[day][time_slot] is None
+
+def assign_teacher_to_global_schedule(teacher_name, day, time_slot, grade, subject):
+    """Assign a teacher to a slot in the global schedule"""
+    global_schedule[day][time_slot] = (teacher_name, grade, subject)
+
+
+
+def asignar_slots_a_un_profe(teacher_name, datos_del_profe):
+    total_hours = sum([item.get('hours', 0) for item in datos_del_profe['schedule']])
+    datos_del_profe['cargaHoraria'] = total_hours
+
+    current_day = 0
+    current_slot = 0
+    MAX_HOURS_PER_SUBJECT = 2
+    current_hours_per_subject = 0
+
+    all_slots_filled = False
+
+    counter = 0
+    MAX_LOOP_COUNT = 10000
+
+    print(datos_del_profe)  # Add this line just before the while loop
+
+    if 'cargaHoraria' not in datos_del_profe:
+        print("Error: 'cargaHoraria' key missing!")
+        return global_schedule
+
+    print("Starting the outer loop...")
+
+    while datos_del_profe['cargaHoraria'] > 0:
+        if not datos_del_profe['schedule']:
+            break
+
+        current_schedule = datos_del_profe['schedule'][0]
+        course = current_schedule['curso']
+        subject = current_schedule.get('subjects', '')
+        hours = current_schedule.get('hours', 0)
+        print("End of one iteration of the outer loop...")
+
+        while hours > 0 and not all_slots_filled:
+            unsuccessful_attempts = 0
+            MAX_UNSUCCESSFUL_ATTEMPTS = len(TIME_SLOTS) * len(WEEKDAYS)  # This gives a generous upper limit
+
+            while hours > 0 and not all_slots_filled:
+                if is_slot_available(WEEKDAYS[current_day], TIME_SLOTS[current_slot]):
+                    # ... rest of your code to assign the slot ...
+                    current_slot += 1
+                    if current_slot >= len(TIME_SLOTS):  # Assuming TIME_SLOTS is a list of your time slots in a day
+                        current_slot = 0
+                        current_day += 1
+                    if current_day >= len(WEEKDAYS):  # Assuming WEEKDAYS is a list of your weekdays
+                        all_slots_filled = True
+
+                    unsuccessful_attempts = 0  # Reset the counter if a slot is found
+                else:
+                    unsuccessful_attempts += 1
+                    if unsuccessful_attempts >= MAX_UNSUCCESSFUL_ATTEMPTS:
+                        print("Too many unsuccessful attempts to find an available slot. Exiting...")
+                        break
+                # ... rest of the loop code ...
+
+            if counter > MAX_LOOP_COUNT:
+                print("Loop exceeded max iterations, breaking...")
+                break
+            print(f"Current day index: {current_day}")
+            print(f"Current slot index: {current_slot}")
+
+            if is_slot_available(WEEKDAYS[current_day], TIME_SLOTS[current_slot]):
+                assign_teacher_to_global_schedule(teacher_name, WEEKDAYS[current_day], TIME_SLOTS[current_slot], course, subject)
+                datos_del_profe['cargaHoraria'] -= 1
+                current_schedule['hours'] -= 1
+                hours -= 1
+                current_slot += 1
+                current_hours_per_subject += 1
+            else:  # No slot available, so move to the next slot/day
+                current_slot += 1
+                if current_slot >= len(TIME_SLOTS):
+                    current_slot = 0
+                    current_day += 1
+
+                if current_day >= len(WEEKDAYS):
+                    current_day = 0
+                    # Here, if you need to know you wrapped around, you can set a flag or counter
+
+                    break
+
+                # Move to the next slot/day after a teacher is assigned
+            if current_slot == len(TIME_SLOTS) or current_hours_per_subject == MAX_HOURS_PER_SUBJECT:
+                current_slot = 0
+                current_day += 1
+                current_hours_per_subject = 0
+
+            if current_day == len(WEEKDAYS):  # wrap to the start of the week
+                all_slots_filled = True
+                break
+
+
+            if current_slot == len(TIME_SLOTS) or current_hours_per_subject == MAX_HOURS_PER_SUBJECT:
+                current_slot = 0
+                current_day = (current_day + 1) % len(WEEKDAYS)
+                current_hours_per_subject = 0
+
+                # Break if all slots have been filled once
+                if all_slots_filled and current_day == 0:
+                    break
+
+                if current_day == 0:  # wrap to the start of the week
+                    all_slots_filled = True
+            counter += 1
+
+        if hours == 0:
+            datos_del_profe['schedule'].pop(0)
+
+        print("Finished assigning slots for", teacher_name)
+
+    return global_schedule
+
+
+
+
+
+
+def write_schedule_to_csv(teacher_name, schedule, filename='schedule.csv'):
+    write_header = not os.path.exists(filename)
+
+    with open(filename, 'a', newline='') as file:
+        writer = csv.writer(file)
+        if write_header:
+            writer.writerow(["Teacher", "Day", "Grade", "Subject", "Time"])  # header row
+        for day, lessons in schedule.items():
+            for lesson in lessons:
+                grade, subject, time = lesson
+                writer.writerow([teacher_name, day, grade, subject, time])
+
+
+def fill_slots_with_teachers():
+    """Attempt to fill the global schedule with teachers' schedules"""
+
+    for teacher_name, teacher_data in teachers.items():
+
+        if not are_slots_available():
+            print(f"Slots are full! Couldn't schedule {teacher_name}.")
+            break
+
+        teacher_schedule = asignar_slots_a_un_profe(teacher_name, teacher_data)
+        write_schedule_to_csv(teacher_name, teacher_schedule)
+
+
+def are_slots_available():
+    """Check if any slots are available in the global schedule"""
+    for day, slots in global_schedule.items():
+        for slot, value in slots.items():
+            if value is None:
+                return True
+    return False
+
+
+if __name__ == "__main__":
+    fill_slots_with_teachers()
