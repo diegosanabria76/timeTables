@@ -1,0 +1,79 @@
+import csv
+
+def assign_time_slots_single_teacher(teacher_data):
+    # Calculate total teaching hours based on the provided schedule
+    total_hours = sum([item['hours'] for item in teacher_data['schedule']])
+    teacher_data['cargaHoraria'] = total_hours
+
+    TIME_SLOTS = ["8am", "9am", "10am", "1pm", "2pm", "3pm"]
+    WEEKDAYS = ["Day_One", "Day_Two", "Day_Three", "Day_Four", "Day_Five", "Day_Six"]
+    schedule = {day: [] for day in WEEKDAYS}
+
+    current_day = 0
+    current_slot = 0
+    MAX_HOURS_PER_SUBJECT = 2  # Set a maximum of 2 hours for a subject in a day,  ubt in reality should be till 5
+    current_hours_per_subject = 0
+
+    all_slots_filled = False
+
+    while teacher_data['cargaHoraria'] > 0:
+        if not teacher_data['schedule']:
+            break
+
+        current_schedule = teacher_data['schedule'][0]
+        course = current_schedule['curso']
+        subject = current_schedule['asignatura']
+        hours = current_schedule['hours']
+
+        while hours > 0 and current_hours_per_subject < MAX_HOURS_PER_SUBJECT:
+            print("Debugging: current_day:", current_day, "current_slot:", current_slot)# after test we should delete this line
+            schedule[WEEKDAYS[current_day]].append((course, subject, TIME_SLOTS[current_slot]))
+            teacher_data['cargaHoraria'] -= 1
+            current_schedule['hours'] -= 1
+            hours -= 1
+            current_slot += 1
+            current_hours_per_subject += 1
+
+            if current_slot == len(TIME_SLOTS) or current_hours_per_subject == MAX_HOURS_PER_SUBJECT:
+                current_slot = 0
+                current_day = (current_day + 1) % len(WEEKDAYS)
+                current_hours_per_subject = 0
+
+                # Break if all slots have been filled once
+                if all_slots_filled and current_day == 0:
+                    break
+
+                if current_day == 0:  # wrapped to the beginning of the week
+                    all_slots_filled = True
+
+        if hours == 0:
+            teacher_data['schedule'].pop(0)
+
+    return schedule
+
+
+
+def write_schedule_to_csv(teacher_name, schedule, filename='horario.csv'):
+    with open(filename, 'w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(["Teacher", "Day", "Grade", "Subject", "Time"])  # header row
+
+        for day, lessons in schedule.items():
+            for lesson in lessons:
+                grade, subject, time = lesson
+                writer.writerow([teacher_name, day, grade, subject, time])
+
+# Example usage:
+leonardo_data = {
+    'schedule': [
+        {'curso': 6, 'asignatura': 'filosofia', 'hours': 10},
+        {'curso': 8, 'asignatura': 'etica', 'hours': 5},
+        {'curso': 9, 'asignatura': 'filosofia', 'hours': 5},
+        {'curso': 10, 'asignatura': 'religionn', 'hours': 8},
+    ]
+}
+
+
+
+leonardo_schedule = assign_time_slots_single_teacher(leonardo_data)
+write_schedule_to_csv("Leonardo", leonardo_schedule)
