@@ -1,0 +1,5 @@
+WEEKDAYS = ["Day_One", "Day_Two", "Day_Three", "Day_Four", "Day_Five", "Day_Six"]
+TIME_SLOTS = ["8am", "9am", "10am", "11am", "12pm", "1pm", "2pm", "3pm"]
+
+# Initialize an empty global schedule
+global_schedule = {day: {slot: None for slot in TIME_SLOTS} for day in WEEKDAYS}
