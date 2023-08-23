@@ -1,0 +1,115 @@
+import csv
+
+teachers = {
+    'Leonardo': {
+        'schedule': [
+            {'curso': 6, 'subjects': {"filosofia": 3, "etica": 2, "religion": 4}},
+            {'curso': 8, 'subjects': "etica", "hours": 5},
+            {'curso': 9, 'subjects': "filosofia", "hours": 5},
+            {'curso': 10, 'subjects': "religion", "hours": 8},
+        ]
+    },
+    'Andrea': {
+        'schedule': [
+            {'curso': 6, 'subjects': {"math": 2, "geometry": 1, "arithmetic": 5}},
+            {'curso': 1, 'subjects': "etica", "hours": 5},
+            {'curso': 3, 'subjects': "filosofia", "hours": 5},
+            {'curso': 4, 'subjects': "religion", "hours": 8},
+        ]
+    },
+}
+
+leonardo_data = teachers['Leonardo']
+leonardo_schedule = leonardo_data['schedule']
+
+leonardo_cursos = [entry['curso'] for entry in leonardo_schedule]
+leonardo_subjects = [entry['subjects'] for entry in leonardo_schedule if 'subjects' in entry]
+leonardo_hours = [entry['hours'] for entry in leonardo_schedule if 'hours' in entry]
+
+#print("Leonardo's Data:")
+#print(leonardo_data)
+#print("Curso List:")
+#print(leonardo_cursos)
+#print("Subjects List:")
+#print(leonardo_subjects)
+#print("Hours List:")
+#print(leonardo_hours)
+
+def asignar_slots_a_un_profe(datos_del_profe):
+    total_hours = sum([item.get('hours', 0) for item in datos_del_profe['schedule']])
+    datos_del_profe['cargaHoraria'] = total_hours
+
+    TIME_SLOTS = ["8am", "9am", "10am", "11am", "12pm", "1pm", "2pm", "3pm"]
+    WEEKDAYS = ["Day_One", "Day_Two", "Day_Three", "Day_Four", "Day_Five", "Day_Six"]
+    schedule = {day: [] for day in WEEKDAYS}
+
+    current_day = 0
+    current_slot = 0
+    MAX_HOURS_PER_SUBJECT = 2
+    current_hours_per_subject = 0
+
+    all_slots_filled = False
+
+    while datos_del_profe['cargaHoraria'] > 0:
+        if not datos_del_profe['schedule']:
+            break
+
+        current_schedule = datos_del_profe['schedule'][0]
+        course = current_schedule['curso']
+        subject = current_schedule.get('subjects', '')  # Use get to handle both cases
+        hours = current_schedule.get('hours', 0)  # Use get to handle both cases
+
+
+
+
+
+        while hours > 0 and current_hours_per_subject < MAX_HOURS_PER_SUBJECT:
+
+            schedule[WEEKDAYS[current_day]].append((course, subject, TIME_SLOTS[current_slot]))
+            datos_del_profe['cargaHoraria'] -= 1
+            current_schedule['hours'] -= 1
+            hours -= 1
+            current_slot += 1
+            current_hours_per_subject += 1
+            if current_slot == len(TIME_SLOTS) or current_hours_per_subject == MAX_HOURS_PER_SUBJECT:
+                current_slot = 0
+                current_day = (current_day + 1) % len(WEEKDAYS)
+                current_hours_per_subject = 0
+
+                # romper si todos los slots han sifdo llenados una vez
+                if all_slots_filled and current_day == 0:
+                    break
+
+                if current_day == 0:  # envolver al principio de la semana.
+                    all_slots_filled = True
+        if hours == 0:
+            datos_del_profe['schedule'].pop(0)
+
+
+    return schedule
+
+# Example usage for 'Leonardo'
+
+
+
+#print(leonardo_schedule_result)
+
+
+def write_schedule_to_csv(teacher_name, schedule, filename='horario.csv'):
+    with open(filename, 'w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(["Teacher", "Day", "Grade", "Subject", "Time"])  # header row
+
+
+        for day, lessons in schedule.items():
+            for lesson in lessons:
+                grade, subject, time = lesson
+                writer.writerow([teacher_name, day, grade, subject, time])
+
+leonardo_data = teachers['Leonardo']
+leonardo_schedule = leonardo_data['schedule']
+
+leonardo_schedule_result = asignar_slots_a_un_profe(teachers['Leonardo'])
+
+
+write_schedule_to_csv("Leonardo", leonardo_schedule_result)
